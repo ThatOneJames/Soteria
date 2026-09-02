@@ -1,1 +1,258 @@
-<p>admin works!</p>
+<link rel="stylesheet" href="admin.css" />
+<div class="admin-root">
+  <aside class="sidebar" [class.sidebar--open]="sidebarOpen" [class.sidebar--collapsed]="!sidebarOpen">
+    <div class="sidebar-header">
+      <span *ngIf="sidebarOpen" class="sidebar-logo">Soteria<span class="sidebar-logo-accent">Insurance</span></span>
+      <button (click)="toggleSidebar()" class="icon-btn sidebar-toggle" aria-label="Toggle sidebar">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="sidebar-body">
+      <p *ngIf="sidebarOpen" class="sidebar-section-label">Navigation</p>
+      <nav class="nav-list">
+        <button
+          *ngFor="let item of navItems"
+          (click)="setTab(item.id)"
+          class="nav-item"
+          [class.nav-item--active]="tab === item.id"
+        >
+          <span class="nav-icon">{{ item.icon }}</span>
+          <ng-container *ngIf="sidebarOpen">
+            <span class="nav-label">{{ item.label }}</span>
+            <span *ngIf="item.count !== undefined" class="nav-count">{{ item.count }}</span>
+          </ng-container>
+        </button>
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <a routerLink="/" class="nav-item nav-item--footer">
+        <span class="nav-icon">🌐</span>
+        <span *ngIf="sidebarOpen" class="nav-label">View Site</span>
+      </a>
+      <button class="nav-item nav-item--footer">
+        <span class="nav-icon">🚪</span>
+        <span *ngIf="sidebarOpen" class="nav-label">Log Out</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1 class="page-title">{{ pageTitle }}</h1>
+        <p class="page-subtitle">Admin Dashboard · Soteria Insurance</p>
+      </div>
+      <div class="topbar-user">
+        <div class="avatar">A</div>
+        <div class="user-meta">
+          <p class="user-name">Admin User</p>
+          <p class="user-email">admin&#64;soteriainsurance.com</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- STATS ROW -->
+      <div class="stats-grid">
+        <div *ngFor="let s of statCards" class="stat-card" [ngClass]="'stat-card--' + s.color">
+          <div class="stat-card-header">
+            <span class="stat-label">{{ s.label }}</span>
+            <span class="stat-icon">{{ s.icon }}</span>
+          </div>
+          <p class="stat-value">{{ s.val }}</p>
+          <p class="stat-change">{{ s.change }}</p>
+        </div>
+      </div>
+
+      <div *ngIf="tab === 'leads'" class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">All Leads</h2>
+          <div class="panel-actions">
+            <input [(ngModel)]="search" placeholder="Search leads..." class="search-input" />
+            <button class="btn btn--primary">+ New Lead</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th *ngFor="let h of ['ID', 'Customer', 'Phone', 'Car', 'Coverage', 'Insurer', 'Amount', 'Status', 'Date', '']">
+                  {{ h }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let lead of filteredLeads; trackBy: trackByLeadId">
+                <td class="cell-muted cell-id">{{ lead.id }}</td>
+                <td class="nowrap">
+                  <p class="cell-primary">{{ lead.name }}</p>
+                  <p class="cell-muted">{{ lead.email }}</p>
+                  <td class="cell-body nowrap">{{ lead.phone }}</td>
+                <td class="cell-body nowrap">{{ lead.car }}</td>
+                <td class="cell-body nowrap">{{ lead.coverage }}</td>
+                <td class="cell-body nowrap">{{ lead.insurer }}</td>
+                <td class="cell-amount nowrap">{{ lead.amount }}</td>
+                <td>
+                  <span class="status-badge nowrap" [ngClass]="getStatusClass(lead.status)">
+                    {{ lead.status }}
+                  </span>
+                </td>
+                <td class="cell-muted nowrap">{{ lead.date }}</td>
+                <td>
+                  <button class="link-btn nowrap">View</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div *ngIf="filteredLeads.length === 0" class="empty-state">
+            No leads found matching "{{ search }}"
+          </div>
+        </div>
+        <div class="panel-footer">
+          <span class="footer-note">Showing {{ filteredLeads.length }} of {{ leads.length }} leads</span>
+          <div class="page-list">
+            <button
+              *ngFor="let p of pagination"
+              class="page-btn"
+              [class.page-btn--active]="p === '1'"
+            >
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="tab === 'quotes'" class="analytics-grid">
+        <div class="card">
+          <h2 class="card-title">Coverage Mix</h2>
+          <div class="coverage-list">
+            <div *ngFor="let item of coverageMix" class="coverage-item">
+              <div class="coverage-item-header">
+                <span>{{ item.label }}</span>
+                <span>{{ item.pct }}% · {{ item.val }}</span>
+              </div>
+              <div class="progress-track">
+                <div
+                  class="progress-fill"
+                  [ngClass]="'progress-fill--' + item.color"
+                  [style.width.%]="item.pct"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Top Car Brands by Leads</h2>
+          <div class="brand-list">
+            <div *ngFor="let b of topBrands; let i = index" class="brand-row">
+              <span class="brand-rank">{{ i + 1 }}</span>
+              <span class="brand-name">{{ b.brand }}</span>
+              <div class="brand-track">
+                <div class="brand-fill" [style.width.%]="brandBarWidth(b.count)"></div>
+              </div>
+              <span class="brand-count">{{ b.count.toLocaleString() }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card--wide">
+          <h2 class="card-title">Monthly Lead Volume (2025)</h2>
+          <div class="volume-chart">
+            <div *ngFor="let item of monthlyVolume" class="volume-bar-wrap">
+              <div
+                *ngIf="item.v > 0"
+                class="volume-bar"
+                [style.height.%]="monthBarHeight(item.v)"
+                [title]="item.v + ' leads'"
+              ></div>
+              <div *ngIf="item.v === 0" class="volume-bar volume-bar--empty"></div>
+              <span class="volume-label">{{ item.m }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="tab === 'providers'" class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Insurance Partners</h2>
+          <button class="btn btn--primary">+ Add Provider</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th *ngFor="let h of ['Provider', 'Leads Referred', 'Policies Issued', 'Revenue Generated', 'Rating', 'Status', '']">
+                  {{ h }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of providers; trackBy: trackByProviderName">
+                <td>
+                  <div class="provider-cell">
+                    <div class="provider-avatar">{{ p.name.charAt(0) }}</div>
+                    <span class="cell-primary">{{ p.name }}</span>
+                  </div>
+                </td>
+                <td class="cell-body">{{ p.leads.toLocaleString() }}</td>
+                <td class="cell-body">{{ p.policies.toLocaleString() }}</td>
+                <td class="cell-amount">{{ p.revenue }}</td>
+                <td>
+                  <span class="rating">{{ starRating(p.rating) }} {{ p.rating }}</span>
+                </td>
+                <td>
+                  <span class="status-badge" [class.status-badge--active]="p.status === 'Active'" [class.status-badge--inactive]="p.status !== 'Active'">
+                    {{ p.status }}
+                  </span>
+                </td>
+                <td>
+                  <button class="link-btn">Manage</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div *ngIf="tab === 'cars'" class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Car Database</h2>
+          <button class="btn btn--primary">+ Add Car</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th *ngFor="let h of ['Brand', 'Model', 'Year Range', 'Variants', 'Body Type', 'DB Entries', '']">
+                  {{ h }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of cars; trackBy: trackByCar">
+                <td>
+                  <div class="car-cell">
+                    <span class="car-icon">🚗</span>
+                    <span class="cell-primary">{{ c.brand }}</span>
+                  </div>
+                </td>
+                <td class="cell-body">{{ c.model }}</td>
+                <td class="cell-label">{{ c.year }}</td>
+                <td class="cell-body">{{ c.variants }}</td>
+                <td class="cell-body">{{ c.bodytype }}</td>
+                <td class="cell-amount">{{ c.entries.toLocaleString() }}</td>
+                <td class="row-actions">
+                  <button class="link-btn">Edit</button>
+                  <button class="link-btn link-btn--danger">Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
