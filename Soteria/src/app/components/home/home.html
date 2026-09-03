@@ -93,10 +93,22 @@
               </option>
             </select>
           </div>
+          <div class="form-group">
+            <label for="fuelType">Fuel Type</label>
+              
+            <select id="fuelType" 
+            name="fuelType" 
+            [(ngModel)]="fuelType" 
+            required>
+            
+              <option value="">Select fuel type</option>
+              <option *ngFor="let f of fuelTypes" [value]="f">{{ f }}</option>
+           </select>
+          </div>
 
-          <button type="submit" class="quote-button">
-            Get Free Quotes →
-          </button>
+         <a href="quote" class="cta-button">
+            Get Free Quotes → 
+         </a>
 
         </form>
 

@@ -1,0 +1,157 @@
+<link rel="stylesheet" href="quote.css" />
+<div class="quote-page">
+  <header class="quote-header">
+    <a routerLink="/" class="logo">Soteria<span>Insurance</span></a>
+    <a routerLink="/" class="back-link">← Start Over</a>
+  </header>
+
+  <div class="car-bar">
+    <div class="car-bar-summary" *ngIf="!editingDetails">
+      <div class="car-chip">
+        <span class="chip-label">Car</span>
+        <span class="chip-value">{{ car.year }} {{ car.brand }} {{ car.model }}</span>
+      </div>
+      <div class="car-chip">
+        <span class="chip-label">Driver Age</span>
+        <span class="chip-value">{{ car.driverAge }} y/o</span>
+      </div>
+      <div class="car-chip">
+        <span class="chip-label">Years Insured</span>
+        <span class="chip-value">{{ car.yearsInsured }} years</span>
+      </div>
+      <div class="car-chip">
+        <span class="chip-label">NCD</span>
+        <span class="chip-value">{{ car.ncdPercent }}%</span>
+      </div>
+      <div class="car-chip">
+        <span class="chip-label">Sum Insured</span>
+        <span class="chip-value">{{ formatCurrency(car.sumInsuredMin) }} – {{ formatCurrency(car.sumInsuredMax) }}</span>
+      </div>
+      <div class="car-chip">
+        <span class="chip-label">Fuel Type</span>
+        <span class="chip-value">{{ car.fuelType || '—' }}</span>
+       </div>
+      <button class="edit-btn" (click)="toggleEdit()">Edit Details</button>
+    </div>
+
+    <form class="car-bar-edit" *ngIf="editingDetails" (ngSubmit)="applyDetails()">
+      <div class="edit-field">
+        <label>Driver Age</label>
+        <input type="number" [(ngModel)]="car.driverAge" name="driverAge" min="18" max="80" />
+      </div>
+      <div class="edit-field">
+        <label>Years Insured</label>
+        <input type="number" [(ngModel)]="car.yearsInsured" name="yearsInsured" min="0" max="30" />
+      </div>
+      <div class="edit-field">
+        <label>NCD (%)</label>
+        <input type="number" [(ngModel)]="car.ncdPercent" name="ncdPercent" min="0" max="50" />
+      </div>
+      <div class="edit-field">
+        <label>Sum Insured Min</label>
+        <input type="number" [(ngModel)]="car.sumInsuredMin" name="sumInsuredMin" step="10000" />
+      </div>
+      <div class="edit-field">
+        <label>Sum Insured Max</label>
+        <input type="number" [(ngModel)]="car.sumInsuredMax" name="sumInsuredMax" step="10000" />
+      </div>
+      <div class="edit-field">
+        <label>Body Type</label>
+        <select [(ngModel)]="car.bodyType" name="bodyType">
+          <option value="">Select body type</option>
+          <option *ngFor="let b of bodyTypes" [value]="b">{{ b }}</option>
+        </select>
+      </div>
+      <div class="edit-field">
+        <label>Fuel Type</label>
+        <select [(ngModel)]="car.fuelType" name="fuelType">
+          <option value="">Select fuel type</option>
+          <option *ngFor="let f of fuelTypes" [value]="f">{{ f }}</option>
+        </select>
+      </div>
+      <button type="submit" class="apply-btn">Apply & Refresh Quotes</button>
+    </form>
+  </div>
+
+  <div class="results-toolbar">
+    <h1 class="results-title">Compare Car Insurance Quotes</h1>
+    <div class="sort-controls">
+      <span class="sort-label">Sort by</span>
+      <button class="sort-btn" [class.sort-btn--active]="sortBy === 'price'" (click)="setSort('price')">Lowest Price</button>
+      <button class="sort-btn" [class.sort-btn--active]="sortBy === 'maxTSI'" (click)="setSort('maxTSI')">Max Coverage</button>
+      <button class="sort-btn" [class.sort-btn--active]="sortBy === 'casa'" (click)="setSort('casa')">Casa Eligibility</button>
+    </div>
+  </div>
+
+  <div class="quote-list" *ngIf="!loadingQuotes; else loadingBlock">
+    <div class="quote-card" *ngFor="let q of sortedQuotes; trackBy: trackByQuoteId">
+      <div class="quote-card-header">
+        <div class="insurer-badge">{{ q.logoInitial }}</div>
+        <div>
+          <h2 class="insurer-name">{{ q.name }}</h2>
+          <p class="insurer-tagline">{{ q.tagline }}</p>
+        </div>
+      </div>
+
+      <div class="price-block">
+        <span class="price-label">Approx. indicative price</span>
+        <span class="price-value">{{ formatCurrency(q.price) }}</span>
+        <span class="price-sub">per year, after discounts</span>
+      </div>
+
+      <div class="spec-grid">
+        <div class="spec-item">
+          <span class="spec-label">Towing</span>
+          <span class="spec-value">{{ formatCurrency(q.towing) }}</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Vehicle Removal</span>
+          <span class="spec-value">{{ q.vehicleRemoval ? formatCurrency(q.vehicleRemoval) : 'No' }}</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Overnight Accommodation</span>
+          <span class="spec-value">{{ formatCurrency(q.overnightAccommodation) }}</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Casa Eligibility</span>
+          <span class="spec-value">{{ q.casaEligibilityYears }} yrs</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Repair Shops</span>
+          <span class="spec-value">{{ q.accreditedRepairShops ?? 'N/A' }}</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Max TSI</span>
+          <span class="spec-value">{{ formatCurrency(q.maxTSI) }}</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Alt. Transport</span>
+          <span class="spec-value">{{ q.alternativeTransport ? 'Yes' : 'No' }}</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Locksmith</span>
+          <span class="spec-value">{{ q.locksmith ? 'Yes' : 'No' }}</span>
+        </div>
+      </div>
+
+      <div class="coverage-block">
+        <span class="coverage-label">Coverage Includes</span>
+        <ul class="coverage-tags">
+          <li *ngFor="let c of q.coverage">{{ c }}</li>
+        </ul>
+      </div>
+
+      <button class="cta-btn">Check Final Price</button>
+    </div>
+  </div>
+
+  <ng-template #loadingBlock>
+    <div class="quote-list">
+      <div class="quote-card quote-card--skeleton" *ngFor="let i of [1,2,3]">
+        <div class="skeleton-line skeleton-line--wide"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line skeleton-line--short"></div>
+      </div>
+    </div>
+  </ng-template>
+</div>

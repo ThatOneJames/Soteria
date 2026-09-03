@@ -16,6 +16,8 @@ interface Feature {
   desc: string;
 }
 
+type FuelType = 'Gas' | 'Diesel' | 'Hybrid' | 'Electric';
+
 @Component({
   selector: 'app-home',
   standalone: false,
@@ -26,6 +28,9 @@ export class HomeComponent {
   brand = '';
   model = '';
   year = '';
+  bodyType = '';
+  fuelType: FuelType | '' = '';
+  fuelTypes: FuelType[] = ['Gas', 'Diesel', 'Hybrid', 'Electric'];
 
   carModels: Record<string, string[]> = {
     Toyota: ['Vios', 'Fortuner', 'Innova', 'Hilux', 'Wigo', 'Rush'],
@@ -79,10 +84,10 @@ export class HomeComponent {
   }
 
   handleSubmit(): void {
-    this.router.navigate(['/quote'], {
-      queryParams: { brand: this.brand, model: this.model, year: this.year },
-    });
-  }
+  this.router.navigate(['/quote'], {
+    queryParams: { brand: this.brand, model: this.model, year: this.year, fuelType: this.fuelType },
+  });
+ }
 }
 
 @NgModule({
