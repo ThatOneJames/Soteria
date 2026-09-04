@@ -2,6 +2,7 @@ import { Component, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterModule } from '@angular/router';
+import { AuthService } from '../auth/auth';
 
 interface Step {
   icon: string;
@@ -77,17 +78,25 @@ export class HomeComponent {
     { icon: '🤝', title: 'Unbiased Advice', desc: "We're a comparison engine, not an insurer, so we work for you." },
   ];
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, public authService: AuthService) {
+    if (this.authService.currentUser?.role === 'admin') {
+      this.router.navigate(['/admin']);
+    }
+  }
 
   onBrandChange(): void {
     this.model = '';
   }
 
   handleSubmit(): void {
-  this.router.navigate(['/quote'], {
-    queryParams: { brand: this.brand, model: this.model, year: this.year, fuelType: this.fuelType },
-  });
- }
+    this.router.navigate(['/quote'], {
+      queryParams: { brand: this.brand, model: this.model, year: this.year, fuelType: this.fuelType },
+    });
+  }
+
+  logout(): void {
+    this.authService.logout();
+  }
 }
 
 @NgModule({

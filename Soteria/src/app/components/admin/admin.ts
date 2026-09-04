@@ -1,7 +1,8 @@
 import { Component, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, RouterModule } from '@angular/router';
+import { Router, RouterLink, RouterModule } from '@angular/router';
+import { AuthService } from '../auth/auth';
 
 type Tab = 'leads' | 'quotes' | 'providers' | 'cars';
 type StatColor = 'blue' | 'green' | 'orange' | 'purple';
@@ -155,6 +156,8 @@ export class AdminComponent {
   private readonly maxBrandCount = Math.max(...this.topBrands.map(b => b.count));
   private readonly maxMonthlyVolume = Math.max(...this.monthlyVolume.map(m => m.v));
 
+  constructor(private router: Router, private authService: AuthService) {}
+
   get filteredLeads(): Lead[] {
     const q = this.search.toLowerCase();
     return this.leads.filter(l =>
@@ -205,6 +208,11 @@ export class AdminComponent {
 
   trackByCar(_index: number, car: Car): string {
     return `${car.brand}-${car.model}`;
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/']);
   }
 }
 

@@ -3,6 +3,7 @@
   display: block;
 }
 
+
 * {
   box-sizing: border-box;
 }
@@ -10,6 +11,99 @@
 .home {
   width: 100%;
   color: #1a2636;
+}
+
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.nav-logo {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1a2636;
+  text-decoration: none;
+}
+
+.nav-logo span {
+  color: #0d47a1;
+}
+
+.nav-links {
+  display: flex;
+  gap: 28px;
+}
+
+.nav-links a {
+  color: #4a5568;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.nav-links a:hover {
+  color: #0d47a1;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-greeting {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a2636;
+}
+
+.nav-login-btn {
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  color: #0d47a1;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.nav-login-btn:hover {
+  background: #eff6ff;
+}
+
+.nav-signup-btn {
+  padding: 9px 18px;
+  border-radius: 10px;
+  background: #f97316;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.nav-signup-btn:hover {
+  background: #ea580c;
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
 }
 
 .container {
@@ -510,6 +604,8 @@
   text-decoration: none;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   transition: background 0.2s ease;
+  border: 0;
+  cursor: pointer;
 }
 
 .cta-button:hover {

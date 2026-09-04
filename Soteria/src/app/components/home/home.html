@@ -1,5 +1,27 @@
 <div class="home">
-<link rel="stylesheet" href="home.css">
+  <header class="site-nav">
+    <div class="container nav-inner">
+      <a routerLink="/" class="nav-logo">Soteria<span>Insurance</span></a>
+
+      <nav class="nav-links">
+        <a routerLink="/" fragment="how-it-works">How It Works</a>
+        <a routerLink="/" fragment="why-soteria">Why Soteria</a>
+      </nav>
+
+      <div class="nav-actions" *ngIf="(authService.currentUser$ | async) as user; else loggedOut">
+        <span class="nav-greeting">Hi, {{ user.firstName }}</span>
+        <button class="nav-login-btn" (click)="logout()">Log Out</button>
+      </div>
+
+      <ng-template #loggedOut>
+        <div class="nav-actions">
+          <a routerLink="/login" class="nav-login-btn">Log In</a>
+          <a routerLink="/login" [queryParams]="{ tab: 'signup' }" class="nav-signup-btn">Sign Up</a>
+        </div>
+      </ng-template>
+    </div>
+  </header>
+
   <section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-overlay"></div>
@@ -93,22 +115,24 @@
               </option>
             </select>
           </div>
+
           <div class="form-group">
             <label for="fuelType">Fuel Type</label>
-              
-            <select id="fuelType" 
-            name="fuelType" 
-            [(ngModel)]="fuelType" 
-            required>
-            
+
+            <select
+              id="fuelType"
+              name="fuelType"
+              [(ngModel)]="fuelType"
+              required
+            >
               <option value="">Select fuel type</option>
               <option *ngFor="let f of fuelTypes" [value]="f">{{ f }}</option>
-           </select>
+            </select>
           </div>
 
-         <a href="quote" class="cta-button">
-            Get Free Quotes → 
-         </a>
+          <button type="submit" class="cta-button">
+            Get Free Quotes →
+          </button>
 
         </form>
 
@@ -280,7 +304,7 @@
       through Soteria.
     </p>
 
-    <a
+    <a>
       routerLink="/quote"
       class="cta-button"
     >

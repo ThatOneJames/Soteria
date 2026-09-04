@@ -3,9 +3,10 @@ import { RouterOutlet } from '@angular/router';
 import { AdminModule } from './components/admin/admin';
 import { HomeModule } from './components/home/home';
 import { QuoteModule } from './components/quote/quote';
+import { AuthModule } from './components/auth/auth';
 
 @Component({
-  imports: [RouterOutlet, AdminModule, HomeModule, QuoteModule],
+  imports: [RouterOutlet, AdminModule, HomeModule, QuoteModule, AuthModule],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
