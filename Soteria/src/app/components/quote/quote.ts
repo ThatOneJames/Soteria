@@ -1,9 +1,9 @@
-import { Component, NgModule, OnInit } from '@angular/core';
+import { Component, NgModule, OnInit, Injectable, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink, RouterModule } from '@angular/router';
-import { Injectable } from '@angular/core';
 import { Observable, of, delay } from 'rxjs';
+import { AuthService } from '../auth/auth';
 
 export interface InsurerQuote {
   id: string;
@@ -27,7 +27,6 @@ export interface InsurerQuote {
 // Change when the real backend exists. Swap getQuotes() to call HttpClient instead of
 // returning mock data, and QuoteComponent below needs zero changes.
 // ---------------------------------------------------------------------
-
 @Injectable({ providedIn: 'root' })
 export class QuoteService {
   private mockProviders: Omit<InsurerQuote, 'price' | 'loading'>[] = [
@@ -82,8 +81,8 @@ export class QuoteService {
   ];
 
   getQuotes(sumInsured: number): Observable<InsurerQuote[]> {
-    // Changed method to return mock data with random prices for demonstration purposes. 
-    // Use this to call an API endpoint.
+    // Returns mock data with random prices for demonstration purposes.
+    // Change to ENDPOINT call to backend API when available.
     const quotes: InsurerQuote[] = this.mockProviders.map(p => ({
       ...p,
       price: Math.round((sumInsured * (0.028 + Math.random() * 0.018)) / 50) * 50,
@@ -93,13 +92,54 @@ export class QuoteService {
   }
 }
 
-interface CarDetails {
-  bodyType: any;
+export type PrimaryUse = 'Private' | 'Grab / TNVS' | 'Other';
+
+export interface LeadPayload {
+  insurerId: string;
+  insurerName: string;
+  price: number | null;
   brand: string;
   model: string;
   year: string;
+  bodyType: string;
   fuelType: string;
-  fuelTypes: string[];
+  primaryUse: PrimaryUse;
+  ctplInterested: boolean;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  wantsUpdates: boolean;
+}
+
+export interface LeadResult {
+  success: boolean;
+  message: string;
+}
+
+// ---------------------------------------------------------------------
+// Lead capture - Creates data (NOT USER!)
+// ('/api/leads', payload); [For backend API???]
+// Backend must send email to customer and Insert in Leads in DB.
+// QuoteComponent doesn't need to change either way.
+// ---------------------------------------------------------------------
+@Injectable({ providedIn: 'root' })
+export class LeadService {
+  submitLead(payload: LeadPayload): Observable<LeadResult> {
+    console.log('[mock] Lead submitted (would email + save to DB):', payload);
+    return of({
+      success: true,
+      message: `Thanks, ${payload.firstName}! Your quote request has been sent — check your email shortly.`,
+    }).pipe(delay(600));
+  }
+}
+
+interface CarDetails {
+  brand: string;
+  model: string;
+  year: string;
+  bodyType: string;
+  fuelType: string;
   driverAge: number;
   yearsInsured: number;
   ncdPercent: number;
@@ -113,7 +153,6 @@ interface CarDetails {
   templateUrl: './quote.html',
   styleUrls: ['./quote.css'],
 })
-
 export class QuoteComponent implements OnInit {
   bodyTypes: string[] = [
     'Sedan',
@@ -138,14 +177,13 @@ export class QuoteComponent implements OnInit {
     brand: '',
     model: '',
     year: '',
+    bodyType: '',
+    fuelType: '',
     driverAge: 35,
     yearsInsured: 3,
     ncdPercent: 30,
     sumInsuredMin: 200000,
     sumInsuredMax: 350000,
-    bodyType: '',
-    fuelType: '',
-    fuelTypes: ['Gasoline', 'Diesel', 'Hybrid', 'Electric'],
   };
 
   editingDetails = false;
@@ -153,7 +191,31 @@ export class QuoteComponent implements OnInit {
   loadingQuotes = true;
   sortBy: 'price' | 'maxTSI' | 'casa' = 'price';
 
-  constructor(private route: ActivatedRoute, private quoteService: QuoteService) {}
+  modalOpen = false;
+  modalStep: 1 | 2 = 1;
+  selectedQuote: InsurerQuote | null = null;
+  primaryUse: PrimaryUse = 'Private';
+  ctplInterested = false;
+
+  leadForm = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    wantsUpdates: true,
+  };
+
+  submittingLead = false;
+  leadErrorMessage = '';
+  leadSuccessMessage = '';
+
+  constructor(
+    private route: ActivatedRoute,
+    private quoteService: QuoteService,
+    private leadService: LeadService,
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
@@ -162,15 +224,31 @@ export class QuoteComponent implements OnInit {
       this.car.year = params['year'] ?? '';
       this.car.bodyType = params['bodyType'] ?? '';
       this.car.fuelType = params['fuelType'] ?? '';
+      this.cdr.markForCheck();
     });
     this.fetchQuotes();
+
+    const user = this.authService.currentUser;
+    if (user) {
+      this.leadForm.firstName = user.firstName;
+      this.leadForm.lastName = user.lastName;
+      this.leadForm.email = user.email;
+    }
   }
 
   fetchQuotes(): void {
     this.loadingQuotes = true;
-    this.quoteService.getQuotes(this.car.sumInsuredMax).subscribe(quotes => {
-      this.quotes = quotes;
-      this.loadingQuotes = false;
+    this.quoteService.getQuotes(this.car.sumInsuredMax).subscribe({
+      next: quotes => {
+        this.quotes = quotes;
+        this.loadingQuotes = false;
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        console.error('getQuotes failed:', err);
+        this.loadingQuotes = false;
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -201,6 +279,72 @@ export class QuoteComponent implements OnInit {
 
   trackByQuoteId(_index: number, q: InsurerQuote): string {
     return q.id;
+  }
+
+  // Leads modal actions
+
+  openLeadModal(quote: InsurerQuote): void {
+    this.selectedQuote = quote;
+    this.modalStep = 1;
+    this.leadErrorMessage = '';
+    this.leadSuccessMessage = '';
+    this.modalOpen = true;
+  }
+
+  closeModal(): void {
+    this.modalOpen = false;
+    this.selectedQuote = null;
+  }
+
+  goToStep2(): void {
+    this.modalStep = 2;
+  }
+
+  backToStep1(): void {
+    this.modalStep = 1;
+  }
+
+  setPrimaryUse(use: PrimaryUse): void {
+    this.primaryUse = use;
+  }
+
+  submitLead(): void {
+    this.leadErrorMessage = '';
+
+    if (!this.leadForm.firstName || !this.leadForm.lastName || !this.leadForm.email || !this.leadForm.phone) {
+      this.leadErrorMessage = 'Please fill in all fields.';
+      return;
+    }
+
+    if (!this.selectedQuote) return;
+
+    this.submittingLead = true;
+    const payload: LeadPayload = {
+      insurerId: this.selectedQuote.id,
+      insurerName: this.selectedQuote.name,
+      price: this.selectedQuote.price,
+      brand: this.car.brand,
+      model: this.car.model,
+      year: this.car.year,
+      bodyType: this.car.bodyType,
+      fuelType: this.car.fuelType,
+      primaryUse: this.primaryUse,
+      ctplInterested: this.ctplInterested,
+      ...this.leadForm,
+    };
+
+    this.leadService.submitLead(payload).subscribe({
+      next: result => {
+        this.submittingLead = false;
+        this.leadSuccessMessage = result.message;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.submittingLead = false;
+        this.leadErrorMessage = 'Something went wrong. Please try again.';
+        this.cdr.markForCheck();
+      },
+    });
   }
 }
 

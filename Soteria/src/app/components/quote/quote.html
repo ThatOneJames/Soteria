@@ -1,4 +1,3 @@
-<link rel="stylesheet" href="quote.css" />
 <div class="quote-page">
   <header class="quote-header">
     <a routerLink="/" class="logo">Soteria<span>Insurance</span></a>
@@ -28,9 +27,13 @@
         <span class="chip-value">{{ formatCurrency(car.sumInsuredMin) }} – {{ formatCurrency(car.sumInsuredMax) }}</span>
       </div>
       <div class="car-chip">
+        <span class="chip-label">Body Type</span>
+        <span class="chip-value">{{ car.bodyType || '—' }}</span>
+      </div>
+      <div class="car-chip">
         <span class="chip-label">Fuel Type</span>
         <span class="chip-value">{{ car.fuelType || '—' }}</span>
-       </div>
+      </div>
       <button class="edit-btn" (click)="toggleEdit()">Edit Details</button>
     </div>
 
@@ -141,7 +144,7 @@
         </ul>
       </div>
 
-      <button class="cta-btn">Check Final Price</button>
+      <button class="cta-btn" (click)="openLeadModal(q)">Check Final Price</button>
     </div>
   </div>
 
@@ -154,4 +157,126 @@
       </div>
     </div>
   </ng-template>
+
+  <div class="modal-overlay" *ngIf="modalOpen" (click)="closeModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <button class="modal-close" (click)="closeModal()" aria-label="Close">✕</button>
+
+      <div class="modal-step-indicator">
+        <div class="step-dot" [class.step-dot--active]="modalStep >= 1">🚗</div>
+        <div class="step-line"></div>
+        <div class="step-dot" [class.step-dot--active]="modalStep >= 2">📞</div>
+      </div>
+
+      <!-- Container SIMILAR to MONEYMAX -->
+      <ng-container *ngIf="!leadSuccessMessage">
+        <!-- STEP 1: Vehicle details -->
+        <div class="modal-body" *ngIf="modalStep === 1">
+          <h2 class="modal-title">1. Vehicle Details</h2>
+            <p class="modal-subtitle">Confirm your vehicle details to get an accurate quote from <b>{{ selectedQuote?.name }}</b>.</p>
+
+          <div class="vehicle-summary">
+            <div class="vehicle-summary-row">
+              <span class="vs-label">Car</span>
+              <span class="vs-value">{{ car.year }} {{ car.brand }} {{ car.model }}</span>
+            </div>
+            <div class="vehicle-summary-row">
+              <span class="vs-label">Body Type</span>
+              <span class="vs-value">{{ car.bodyType || '—' }}</span>
+            </div>
+            <div class="vehicle-summary-row">
+              <span class="vs-label">Fuel Type</span>
+              <span class="vs-value">{{ car.fuelType || '—' }}</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>What is the primary use of your car?</label>
+            <div class="segmented">
+              <button
+                type="button"
+                class="segmented-btn"
+                [class.segmented-btn--active]="primaryUse === 'Private'"
+                (click)="setPrimaryUse('Private')"
+              >Private</button>
+              <button
+                type="button"
+                class="segmented-btn"
+                [class.segmented-btn--active]="primaryUse === 'Grab / TNVS'"
+                (click)="setPrimaryUse('Grab / TNVS')"
+              >Grab / TNVS</button>
+              <button
+                type="button"
+                class="segmented-btn"
+                [class.segmented-btn--active]="primaryUse === 'Other'"
+                (click)="setPrimaryUse('Other')"
+              >Other</button>
+            </div>
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" [(ngModel)]="ctplInterested" name="ctplInterested" />
+            <span>I am interested in Compulsory Third Party Liability (CTPL) Insurance</span>
+          </label>
+
+          <button class="modal-primary-btn" (click)="goToStep2()">Continue</button>
+        </div>
+
+        <!-- STEP 2: Contact details -->
+        <div class="modal-body" *ngIf="modalStep === 2">
+          <h2 class="modal-title">2. Your Details</h2>
+          <p class="modal-subtitle">We'll send your final quote from {{ selectedQuote?.name }} to your email.</p>
+
+          <div class="modal-message modal-message--error" *ngIf="leadErrorMessage">{{ leadErrorMessage }}</div>
+
+          <div class="form-row-split">
+            <div class="form-group">
+              <label>First Name</label>
+              <input type="text" [(ngModel)]="leadForm.firstName" name="leadFirstName" placeholder="First name" />
+            </div>
+            <div class="form-group">
+              <label>Last Name</label>
+              <input type="text" [(ngModel)]="leadForm.lastName" name="leadLastName" placeholder="Last name" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="leadForm.email" name="leadEmail" placeholder="Email" />
+          </div>
+
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" [(ngModel)]="leadForm.phone" name="leadPhone" placeholder="Phone number" />
+          </div>
+
+          <div class="form-group">
+            <label>Do you have any demerit points?</label>
+            <label class="radio-row">
+              <input type="radio" name="wantsUpdates" [value]="true" [(ngModel)]="leadForm.wantsUpdates" />
+              <span>Yes, I would like to receive updates on promos, rewards, and the latest info about products and services from Soteria through phone, email, and other electronic means.</span>
+            </label>
+            <label class="radio-row">
+              <input type="radio" name="wantsUpdates" [value]="false" [(ngModel)]="leadForm.wantsUpdates" />
+              <span>No, thank you.</span>
+            </label>
+          </div>
+
+          <div class="modal-btn-row">
+            <button class="modal-secondary-btn" (click)="backToStep1()">Back</button>
+            <button class="modal-primary-btn" (click)="submitLead()" [disabled]="submittingLead">
+              {{ submittingLead ? 'Sending...' : 'Get My Quote' }}
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <div class="modal-body modal-body--success" *ngIf="leadSuccessMessage">
+        <div class="success-icon">✓</div>
+        <h2 class="modal-title">Request Sent!</h2>
+        <p class="modal-subtitle">{{ leadSuccessMessage }}</p>
+        <button class="modal-primary-btn" (click)="closeModal()">Done</button>
+      </div>
+    </div>
+  </div>
 </div>

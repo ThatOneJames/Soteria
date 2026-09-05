@@ -4,8 +4,7 @@
       <a routerLink="/" class="nav-logo">Soteria<span>Insurance</span></a>
 
       <nav class="nav-links">
-        <a routerLink="/" fragment="how-it-works">How It Works</a>
-        <a routerLink="/" fragment="why-soteria">Why Soteria</a>
+        <a routerLink="quote" fragment="how-it-works">Car Insurance</a>
       </nav>
 
       <div class="nav-actions" *ngIf="(authService.currentUser$ | async) as user; else loggedOut">
